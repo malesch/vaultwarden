@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::process::exit;
 use std::sync::RwLock;
 
@@ -665,6 +666,13 @@ fn validate_config(cfg: &ConfigItems) -> Result<(), Error> {
         err!(format!("`DATABASE_MAX_CONNS` contains an invalid value. Ensure it is between 1 and {}.", limit,));
     }
 
+    if let Some(path) = &cfg.log_file {
+        let file = File::options().append(true).create(true).open(path);
+        if file.is_err() {
+            err!("Cannot write to `LOG_FILE`");
+        }
+    }
+
     let dom = cfg.domain.to_lowercase();
     if !dom.starts_with("http://") && !dom.starts_with("https://") {
         err!(
@@ -925,7 +933,7 @@ impl Config {
         }
 
         //Save to file
-        use std::{fs::File, io::Write};
+        use std::io::Write;
         let mut file = File::create(&*CONFIG_FILE)?;
         file.write_all(config_str.as_bytes())?;
 
